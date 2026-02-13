@@ -6,91 +6,93 @@
     <title>ㄅ一的成長進度追蹤</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f4f7f6;
+            background-color: #f0f2f5;
         }
         .container {
             background: white;
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
             text-align: center;
-            width: 300px;
+            width: 350px;
         }
-        h2 { color: #333; margin-bottom: 1.5rem; }
+        h2 { color: #2c3e50; margin-bottom: 2rem; font-size: 1.5rem; }
         .stat-box {
             margin-bottom: 1.5rem;
-            padding: 1rem;
-            border-radius: 10px;
+            padding: 1.2rem;
+            border-radius: 12px;
+            transition: transform 0.2s;
         }
-        .paid { background-color: #e8f5e9; color: #2e7d32; }
-        .countdown { background-color: #fff3e0; color: #ef6c00; }
-        .number { font-size: 1.8rem; font-weight: bold; display: block; }
-        .label { font-size: 0.9rem; opacity: 0.8; }
+        .stat-box:hover { transform: translateY(-5px); }
+        .paid { background-color: #e8f5e9; border: 1px solid #c8e6c9; color: #2e7d32; }
+        .countdown { background-color: #fff3e0; border: 1px solid #ffe0b2; color: #ef6c00; }
+        .number { font-size: 2.2rem; font-weight: 800; display: block; margin: 5px 0; }
+        .label { font-size: 1rem; font-weight: bold; text-transform: uppercase; }
+        .sub-text { font-size: 0.9rem; margin-top: 8px; display: block; opacity: 0.8; }
+        .info-footer { font-size: 0.75rem; color: #95a5a6; margin-top: 1rem; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>時間進度條</h2>
+    <h2>時間進度監測</h2>
     
     <div class="stat-box paid">
         <span class="label">已支付</span>
         <span class="number" id="paidMonths">0 個月</span>
+        <span class="sub-text">起算點：114/04/20</span>
     </div>
 
     <div class="stat-box countdown">
         <span class="label">倒數成年</span>
         <span class="number" id="remainingMonths">0 個月</span>
+        <span class="sub-text" id="remainingYears">換算中...</span>
+    </div>
+
+    <div class="info-footer">
+        *每月 20 日更新進度<br>
+        成年日期：2034/08/01
     </div>
 </div>
 
 <script>
-    function calculateStats() {
-        const today = new Date();
-        
-        // 1. 成年日期 (2016/08/01 + 18年 = 2034/08/01)
-        const adultDate = new Date(2034, 7, 1); // 月份從0開始，7代表8月
-        
-        // 2. 支付起點 (民國114/04/20 = 2025/04/20)
-        const startPayDate = new Date(2025, 3, 20); // 3代表4月
+    function updateDashboard() {
+        const now = new Date();
+        const curYear = now.getFullYear();
+        const curMonth = now.getMonth(); // 0-11
+        const curDate = now.getDate();
 
-        // 計算月數差的函式
-        function getMonthDiff(d1, d2) {
-            let months = (d2.getFullYear() - d1.getFullYear()) * 12;
-            months += d2.getMonth() - d1.getMonth();
-            // 如果當天日期還沒到該月的20號(或目標日)，則月數不滿一個月不計入？
-            // 這裡採用最直觀的月份相減
-            return months;
-        }
+        // 1. 設定參數
+        const startYear = 2025;
+        const startMonth = 3; // 4月 (JS index 3)
+        const adultYear = 2034;
+        const adultMonth = 7; // 8月 (JS index 7)
 
-        // --- 已支付計算 ---
+        // --- 已支付月份計算 ---
         let paidCount = 0;
-        if (today >= startPayDate) {
-            // 從 2025/04/20 開始算第一筆，所以要 +1
-            paidCount = getMonthDiff(startPayDate, today) + 1;
+        // 計算總月份差
+        let totalMonthsPassed = (curYear - startYear) * 12 + (curMonth - startMonth);
+        
+        // 核心邏輯：如果今天 >= 20日，才算入當前這個月（第一筆 4/20 即為 1）
+        if (totalMonthsPassed >= 0) {
+            paidCount = totalMonthsPassed;
+            if (curDate >= 20) {
+                paidCount += 1;
+            }
         } else {
             paidCount = 0;
         }
 
-        // --- 倒數成年計算 ---
-        let remainingCount = getMonthDiff(today, adultDate);
-        if (remainingCount < 0) remainingCount = 0;
-
-        // 渲染到網頁
-        document.getElementById('paidMonths').innerText = paidCount + " 個月";
-        document.getElementById('remainingMonths').innerText = remainingCount + " 個月";
-    }
-
-    // 執行計算
-    calculateStats();
-</script>
-
-</body>
-</html>
-
+        // --- 倒數成年月份計算 ---
+        // 計算從「今天」到 2034/08/01 的月份差
+        let monthsToAdult = (adultYear - curYear) * 12 + (adultMonth - curMonth);
+        
+        // 核心邏輯：如果今天已經過了 20 日，代表距離目標又近了一個月
+        if (curDate >= 20) {
+            monthsToAdult -=
