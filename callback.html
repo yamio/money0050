@@ -30,9 +30,9 @@
         }
         .paid { background-color: #ebfbee; color: #2b8a3e; border: 1px solid #d3f9d8; }
         .countdown { background-color: #fff4e6; color: #d9480f; border: 1px solid #ffe8cc; }
-        .number { font-size: 2rem; font-weight: 800; display: block; margin-bottom: 5px; }
+        .number { font-size: 2.2rem; font-weight: 800; display: block; margin-bottom: 5px; min-height: 2.5rem; }
         .label { font-size: 0.95rem; font-weight: bold; }
-        .sub-text { font-size: 0.85rem; margin-top: 5px; display: block; opacity: 0.8; font-weight: 500; }
+        .sub-text { font-size: 0.85rem; margin-top: 5px; display: block; opacity: 0.8; font-weight: 500; min-height: 1.2rem; }
     </style>
 </head>
 <body>
@@ -42,42 +42,61 @@
     
     <div class="stat-box paid">
         <span class="label">已支付</span>
-        <span class="number" id="paidMonths">0 個月</span>
+        <span class="number" id="paidMonths"></span>
     </div>
 
     <div class="stat-box countdown">
         <span class="label">倒數成年</span>
-        <span class="number" id="remainingMonths">0 個月</span>
-        <span id="remainingYears" class="sub-text">換算中...</span>
+        <span class="number" id="remainingMonths"></span>
+        <span id="remainingYears" class="sub-text"></span>
     </div>
 </div>
 
 <script>
-    function updateProgress() {
-        // 抓取當前系統時間 (JS 抓取的是使用者裝置時間)
+    window.onload = function() {
         const now = new Date();
         const curY = now.getFullYear();
-        const curM = now.getMonth(); // 0-11
+        const curM = now.getMonth(); 
         const curD = now.getDate();
 
-        // 參數設定
+        // 參數：2025/04/20 起算, 2034/08/01 成年
         const startY = 2025;
-        const startM = 3; // 4月 (Index 3)
+        const startM = 3; 
         const adultY = 2034;
-        const adultM = 7; // 8月 (Index 7)
+        const adultM = 7; 
 
         // --- 已支付計算 ---
-        // 算出從 2025/04 到現在的總月份差
         let monthsPassed = (curY - startY) * 12 + (curM - startM);
-        
-        // 判斷邏輯：如果今天不到 20 日，當月不算（不 +1）
-        // 假設是 2025/04/19，monthsPassed = 0，不加 1，結果為 0
-        // 假設是 2025/04/20，monthsPassed = 0，加 1，結果為 1
         let finalPaid = monthsPassed;
         if (curD >= 20) {
             finalPaid += 1;
         }
 
         // --- 倒數成年計算 ---
-        // 先算到 2034/08 的總月份差距
-        let monthsRemaining = (adult
+        let monthsRemaining = (adultY - curY) * 12 + (adultM - curM);
+        // 如果還沒到 20 日，這整個月都還在倒數中 (不扣掉)
+        if (curD >= 20) {
+            monthsRemaining -= 1;
+        }
+
+        // 安全限制
+        if (finalPaid < 0) finalPaid = 0;
+        if (monthsRemaining < 0) monthsRemaining = 0;
+
+        const y = Math.floor(monthsRemaining / 12);
+        const m = monthsRemaining % 12;
+
+        // 寫入數據
+        document.getElementById('paidMonths').innerText = finalPaid + " 個月";
+        document.getElementById('remainingMonths').innerText = monthsRemaining + " 個月";
+        
+        if (monthsRemaining > 0) {
+            document.getElementById('remainingYears').innerText = "(" + y + " 年 " + m + " 個月)";
+        } else {
+            document.getElementById('remainingYears').innerText = "(已成年)";
+        }
+    };
+</script>
+
+</body>
+</html>
