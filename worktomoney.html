@@ -23,45 +23,23 @@
             text-align: center;
         }
         h2 { color: #d63031; margin-bottom: 1.5rem; }
-        .input-group {
-            margin-bottom: 15px;
-            text-align: left;
-        }
+        .input-group { margin-bottom: 15px; text-align: left; }
         label { display: block; font-size: 0.9rem; color: #5f6368; margin-bottom: 5px; font-weight: bold; }
         input, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #dadce0;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 1rem;
-            background-color: #fff;
+            width: 100%; padding: 10px; border: 1px solid #dadce0;
+            border-radius: 8px; box-sizing: border-box; font-size: 1rem;
         }
         button {
-            width: 100%;
-            padding: 12px;
-            background-color: #0984e3;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
+            width: 100%; padding: 12px; background-color: #0984e3;
+            color: white; border: none; border-radius: 8px;
+            font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px;
         }
-        button:hover { background-color: #74b9ff; }
+        button:active { transform: scale(0.98); }
         .display-section {
-            margin-top: 2rem;
-            padding-top: 1.5rem;
-            border-top: 2px dashed #e8eaed;
+            margin-top: 2rem; padding-top: 1.5rem; border-top: 2px dashed #e8eaed;
         }
         .time-text { font-size: 1.1rem; color: #3c4043; font-weight: 500; }
-        .money-text {
-            font-size: 2.8rem;
-            color: #27ae60;
-            font-weight: 800;
-            margin: 10px 0;
-        }
+        .money-text { font-size: 3rem; color: #27ae60; font-weight: 800; margin: 10px 0; }
         .money-unit { font-size: 0.9rem; color: #7f8c8d; }
     </style>
 </head>
@@ -80,83 +58,4 @@
 
     <div class="input-group">
         <label>您的時薪 (TWD)</label>
-        <input type="number" id="hourlyRate" value="190">
-    </div>
-    
-    <div class="input-group">
-        <label>預計工作時長 (小時)</label>
-        <select id="workHours">
-            <option value="1">1 小時</option>
-            <option value="2">2 小時</option>
-            <option value="3">3 小時</option>
-            <option value="4">4 小時</option>
-            <option value="5">5 小時</option>
-            <option value="6">6 小時</option>
-            <option value="7">7 小時</option>
-            <option value="8" selected>8 小時</option>
-            <option value="9">9 小時</option>
-            <option value="10">10 小時</option>
-            <option value="11">11 小時</option>
-            <option value="12">12 小時</option>
-        </select>
-    </div>
-
-    <button onclick="startCalculation()">開始計算</button>
-
-    <div class="display-section">
-        <div id="timeElapsed" class="time-text">點擊上方按鈕開始</div>
-        <div id="moneyEarned" class="money-text">0.0</div>
-        <div class="money-unit">目前已賺取金額 (元)</div>
-    </div>
-</div>
-
-<script>
-    let timerInterval = null;
-
-    function startCalculation() {
-        if (timerInterval) clearInterval(timerInterval);
-        timerInterval = setInterval(updateProgress, 1000);
-        updateProgress();
-    }
-
-    function updateProgress() {
-        const now = new Date();
-        const startTime = new Date();
-        startTime.setHours(8, 0, 0, 0); // 早上 8 點上班
-
-        const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
-        const maxWorkHours = parseInt(document.getElementById('workHours').value);
-        const dayType = document.getElementById('dayType').value;
-
-        if (now < startTime) {
-            document.getElementById('timeElapsed').innerText = "尚未到 08:00 上班時間";
-            document.getElementById('moneyEarned').innerText = "0.0";
-            return;
-        }
-
-        let diffInSeconds = Math.floor((now - startTime) / 1000);
-        const maxSeconds = maxWorkHours * 3600;
-
-        // 若超過預計時長則封頂
-        if (diffInSeconds > maxSeconds) {
-            diffInSeconds = maxSeconds;
-            clearInterval(timerInterval);
-        }
-
-        // 時間顯示邏輯
-        const hrs = Math.floor(diffInSeconds / 3600);
-        const mins = Math.floor((diffInSeconds % 3600) / 60);
-        const secs = diffInSeconds % 60;
-        document.getElementById('timeElapsed').innerText = 
-            (diffInSeconds >= maxSeconds ? "已完成時長： " : "已上班：") + 
-            `${hrs}小時 ${mins}分 ${secs}秒`;
-
-        // 薪水累計邏輯 (以秒為單位計算)
-        let totalMoney = 0;
-        const baseRatePerSec = hourlyRate / 3600;
-
-        if (dayType === 'weekday') {
-            // 平日：前8小時 1倍, 9-10小時 1.34倍, 11-12小時 1.67倍
-            if (diffInSeconds <= 8 * 3600) {
-                totalMoney = diffInSeconds * baseRatePerSec;
-            } else if (diffInSeconds <= 10 * 36
+        <input type="number"
