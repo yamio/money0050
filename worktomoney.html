@@ -35,6 +35,7 @@
             border-radius: 8px;
             box-sizing: border-box;
             font-size: 1rem;
+            background-color: #fff;
         }
         button {
             width: 100%;
@@ -72,7 +73,7 @@
     <div class="input-group">
         <label>當前日期類型</label>
         <select id="dayType">
-            <option value="weekday">平日 (前8H正常, 之後加班)</option>
+            <option value="weekday">平日 (第9H起加班)</option>
             <option value="holiday">休息日 (加班費率制)</option>
         </select>
     </div>
@@ -84,7 +85,20 @@
     
     <div class="input-group">
         <label>預計工作時長 (小時)</label>
-        <select id="workHours"></select>
+        <select id="workHours">
+            <option value="1">1 小時</option>
+            <option value="2">2 小時</option>
+            <option value="3">3 小時</option>
+            <option value="4">4 小時</option>
+            <option value="5">5 小時</option>
+            <option value="6">6 小時</option>
+            <option value="7">7 小時</option>
+            <option value="8" selected>8 小時</option>
+            <option value="9">9 小時</option>
+            <option value="10">10 小時</option>
+            <option value="11">11 小時</option>
+            <option value="12">12 小時</option>
+        </select>
     </div>
 
     <button onclick="startCalculation()">開始計算</button>
@@ -97,7 +111,52 @@
 </div>
 
 <script>
-    // 自動生成 1-12 小時選單
-    const hourSelect = document.getElementById('workHours');
-    for(let i=1; i<=12; i++) {
-        let opt = document.createElement('option');
+    let timerInterval = null;
+
+    function startCalculation() {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(updateProgress, 1000);
+        updateProgress();
+    }
+
+    function updateProgress() {
+        const now = new Date();
+        const startTime = new Date();
+        startTime.setHours(8, 0, 0, 0); // 早上 8 點上班
+
+        const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+        const maxWorkHours = parseInt(document.getElementById('workHours').value);
+        const dayType = document.getElementById('dayType').value;
+
+        if (now < startTime) {
+            document.getElementById('timeElapsed').innerText = "尚未到 08:00 上班時間";
+            document.getElementById('moneyEarned').innerText = "0.0";
+            return;
+        }
+
+        let diffInSeconds = Math.floor((now - startTime) / 1000);
+        const maxSeconds = maxWorkHours * 3600;
+
+        // 若超過預計時長則封頂
+        if (diffInSeconds > maxSeconds) {
+            diffInSeconds = maxSeconds;
+            clearInterval(timerInterval);
+        }
+
+        // 時間顯示邏輯
+        const hrs = Math.floor(diffInSeconds / 3600);
+        const mins = Math.floor((diffInSeconds % 3600) / 60);
+        const secs = diffInSeconds % 60;
+        document.getElementById('timeElapsed').innerText = 
+            (diffInSeconds >= maxSeconds ? "已完成時長： " : "已上班：") + 
+            `${hrs}小時 ${mins}分 ${secs}秒`;
+
+        // 薪水累計邏輯 (以秒為單位計算)
+        let totalMoney = 0;
+        const baseRatePerSec = hourlyRate / 3600;
+
+        if (dayType === 'weekday') {
+            // 平日：前8小時 1倍, 9-10小時 1.34倍, 11-12小時 1.67倍
+            if (diffInSeconds <= 8 * 3600) {
+                totalMoney = diffInSeconds * baseRatePerSec;
+            } else if (diffInSeconds <= 10 * 36
