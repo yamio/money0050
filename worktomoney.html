@@ -82,7 +82,7 @@
     <button id="startBtn">開始計算</button>
 
     <div class="display-section">
-        <div id="timeElapsed" class="time-text">點擊上方按鈕開始</div>
+        <div id="timeElapsed" class="time-text">已經上班 0時 0分 0秒</div>
         <div id="moneyEarned" class="money-text">0.0</div>
         <div class="money-unit">目前已賺取金額 (元)</div>
     </div>
@@ -97,7 +97,6 @@
             let timeStr = (h < 10 ? '0' + h : h) + ':' + m;
             opt.value = timeStr;
             opt.innerText = timeStr;
-            // 預設選擇 08:00
             if (timeStr === '08:00') opt.selected = true;
             startPointSelect.appendChild(opt);
         }
@@ -113,13 +112,10 @@
 
     function runCalculation() {
         const now = new Date();
-        
-        // 抓取選單中的上班時與分
         const [startH, startM] = document.getElementById('startPoint').value.split(':');
         const startTime = new Date();
         startTime.setHours(parseInt(startH), parseInt(startM), 0, 0);
 
-        // 如果現在還沒到上班時間
         if (now < startTime) {
             document.getElementById('timeElapsed').innerText = "尚未到上班時間 (" + document.getElementById('startPoint').value + ")";
             document.getElementById('moneyEarned').innerText = "0.0";
@@ -140,8 +136,10 @@
         const h = Math.floor(diffInSeconds / 3600);
         const m = Math.floor((diffInSeconds % 3600) / 60);
         const s = diffInSeconds % 60;
+        
+        // 依照需求更新文字格式
         document.getElementById('timeElapsed').innerText = 
-            (isOffWork ? "已完成時長：" : "已上班：") + `${h}時 ${m}分 ${s}秒`;
+            (isOffWork ? "已完成時長：" : "已經上班 ") + `${h}時 ${m}分 ${s}秒`;
 
         const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
         const dayType = document.getElementById('dayType').value;
