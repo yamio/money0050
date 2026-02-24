@@ -58,4 +58,106 @@
 
     <div class="input-group">
         <label>您的時薪 (TWD)</label>
-        <input type="number"
+        <input type="number" id="hourlyRate" value="190">
+    </div>
+    
+    <div class="input-group">
+        <label>預計工作時長 (小時)</label>
+        <select id="workHours">
+            <option value="1">1 小時</option><option value="2">2 小時</option>
+            <option value="3">3 小時</option><option value="4">4 小時</option>
+            <option value="5">5 小時</option><option value="6">6 小時</option>
+            <option value="7">7 小時</option><option value="8" selected>8 小時</option>
+            <option value="9">9 小時</option><option value="10">10 小時</option>
+            <option value="11">11 小時</option><option value="12">12 小時</option>
+        </select>
+    </div>
+
+    <button id="startBtn">開始計算</button>
+
+    <div class="display-section">
+        <div id="timeElapsed" class="time-text">點擊上方按鈕開始</div>
+        <div id="moneyEarned" class="money-text">0.0</div>
+        <div class="money-unit">目前已賺取金額 (元)</div>
+    </div>
+</div>
+
+<script>
+    let timer = null;
+
+    document.getElementById('startBtn').addEventListener('click', function() {
+        if (timer) clearInterval(timer);
+        
+        // 點擊後立即執行一次，不要等一秒
+        runCalculation();
+        // 隨後每秒執行一次
+        timer = setInterval(runCalculation, 1000);
+    });
+
+    function runCalculation() {
+        const now = new Date();
+        
+        // 設定今天的上班起點為 08:00:00
+        const startTime = new Date();
+        startTime.setHours(8, 0, 0, 0);
+
+        // 如果現在還沒到 8 點，直接顯示 0 並停止
+        if (now < startTime) {
+            document.getElementById('timeElapsed').innerText = "尚未到 08:00 上班時間";
+            document.getElementById('moneyEarned').innerText = "0.0";
+            return;
+        }
+
+        // --- 核心計算：現在時間 - 08:00 ---
+        let diffInSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+        
+        const maxWorkHours = parseInt(document.getElementById('workHours').value);
+        const maxSeconds = maxWorkHours * 3600;
+
+        // 判斷是否下班
+        let isOffWork = false;
+        if (diffInSeconds >= maxSeconds) {
+            diffInSeconds = maxSeconds;
+            isOffWork = true;
+            clearInterval(timer);
+        }
+
+        // 換算顯示時間
+        const h = Math.floor(diffInSeconds / 3600);
+        const m = Math.floor((diffInSeconds % 3600) / 60);
+        const s = diffInSeconds % 60;
+        document.getElementById('timeElapsed').innerText = 
+            (isOffWork ? "已完成時長：" : "已上班：") + `${h}時 ${m}分 ${s}秒`;
+
+        // 計算薪水
+        const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+        const dayType = document.getElementById('dayType').value;
+        const baseRateSec = hourlyRate / 3600;
+        let totalEarned = 0;
+
+        if (dayType === 'weekday') {
+            // 平日費率
+            if (diffInSeconds <= 8 * 3600) {
+                totalEarned = diffInSeconds * baseRateSec;
+            } else if (diffInSeconds <= 10 * 3600) {
+                totalEarned = (8 * 3600 * baseRateSec) + (diffInSeconds - 8 * 3600) * baseRateSec * 1.34;
+            } else {
+                totalEarned = (8 * 3600 * baseRateSec) + (2 * 3600 * baseRateSec * 1.34) + (diffInSeconds - 10 * 3600) * baseRateSec * 1.67;
+            }
+        } else {
+            // 休息日費率
+            if (diffInSeconds <= 2 * 3600) {
+                totalEarned = diffInSeconds * baseRateSec * 1.34;
+            } else if (diffInSeconds <= 8 * 3600) {
+                totalEarned = (2 * 3600 * baseRateSec * 1.34) + (diffInSeconds - 2 * 3600) * baseRateSec * 1.67;
+            } else {
+                totalEarned = (2 * 3600 * baseRateSec * 1.34) + (6 * 3600 * baseRateSec * 1.67) + (diffInSeconds - 8 * 3600) * baseRateSec * 2.67;
+            }
+        }
+
+        document.getElementById('moneyEarned').innerText = totalEarned.toFixed(1);
+    }
+</script>
+
+</body>
+</html>
