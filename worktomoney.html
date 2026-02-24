@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>工作進度與薪資計算</title>
+    <title>薪水小偷換算表</title>
     <style>
         body {
             font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
@@ -19,16 +19,16 @@
             padding: 2rem;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            width: 350px;
+            width: 360px;
             text-align: center;
         }
-        h2 { color: #1a73e8; margin-bottom: 1.5rem; }
+        h2 { color: #d63031; margin-bottom: 1.5rem; }
         .input-group {
             margin-bottom: 15px;
             text-align: left;
         }
-        label { display: block; font-size: 0.9rem; color: #5f6368; margin-bottom: 5px; }
-        input {
+        label { display: block; font-size: 0.9rem; color: #5f6368; margin-bottom: 5px; font-weight: bold; }
+        input, select {
             width: 100%;
             padding: 10px;
             border: 1px solid #dadce0;
@@ -36,75 +36,68 @@
             box-sizing: border-box;
             font-size: 1rem;
         }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #0984e3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover { background-color: #74b9ff; }
         .display-section {
             margin-top: 2rem;
             padding-top: 1.5rem;
             border-top: 2px dashed #e8eaed;
         }
-        .time-text { font-size: 1.2rem; color: #3c4043; font-weight: 500; }
+        .time-text { font-size: 1.1rem; color: #3c4043; font-weight: 500; }
         .money-text {
-            font-size: 2.5rem;
-            color: #1e8e3e;
+            font-size: 2.8rem;
+            color: #27ae60;
             font-weight: 800;
             margin: 10px 0;
         }
-        .money-unit { font-size: 1rem; color: #1e8e3e; }
+        .money-unit { font-size: 0.9rem; color: #7f8c8d; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>薪資實時監測</h2>
+    <h2>🥷 薪水小偷換算表</h2>
     
     <div class="input-group">
+        <label>當前日期類型</label>
+        <select id="dayType">
+            <option value="weekday">平日 (前8H正常, 之後加班)</option>
+            <option value="holiday">休息日 (加班費率制)</option>
+        </select>
+    </div>
+
+    <div class="input-group">
         <label>您的時薪 (TWD)</label>
-        <input type="number" id="hourlyRate" placeholder="例如: 200" value="190">
+        <input type="number" id="hourlyRate" value="190">
     </div>
     
     <div class="input-group">
         <label>預計工作時長 (小時)</label>
-        <input type="number" id="workHours" placeholder="例如: 8" value="8">
+        <select id="workHours"></select>
     </div>
 
+    <button onclick="startCalculation()">開始計算</button>
+
     <div class="display-section">
-        <div class="time-text" id="timeElapsed">已上班：0小時 0分 0秒</div>
-        <div class="money-text" id="moneyEarned">0.0</div>
+        <div id="timeElapsed" class="time-text">點擊上方按鈕開始</div>
+        <div id="moneyEarned" class="money-text">0.0</div>
         <div class="money-unit">目前已賺取金額 (元)</div>
     </div>
 </div>
 
 <script>
-    function updateProgress() {
-        const now = new Date();
-        
-        // 設定今天的上班基準點：08:00:00
-        const startTime = new Date();
-        startTime.setHours(8, 0, 0, 0);
-
-        // 取得輸入值
-        const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
-        
-        // 如果現在還沒到 8 點，顯示未開始
-        if (now < startTime) {
-            document.getElementById('timeElapsed').innerText = "尚未到上班時間 (08:00)";
-            document.getElementById('moneyEarned').innerText = "0.0";
-            return;
-        }
-
-        // 計算秒數差距
-        const diffInSeconds = Math.floor((now - startTime) / 1000);
-        
-        // 換算時、分、秒
-        const hrs = Math.floor(diffInSeconds / 3600);
-        const mins = Math.floor((diffInSeconds % 3600) / 60);
-        const secs = diffInSeconds % 60;
-
-        // 計算薪資 (時薪 / 3600 = 每秒賺多少)
-        const moneyPerSecond = hourlyRate / 3600;
-        const totalEarned = diffInSeconds * moneyPerSecond;
-
-        // 顯示時間
-        document.getElementById('timeElapsed').innerText = `已上班：${hrs}小時 ${mins}分 ${secs}秒`;
-        
-        // 顯示金額 (取到小數第一位)
-        document.getElementById('moneyEarned').innerText = total
+    // 自動生成 1-12 小時選單
+    const hourSelect = document.getElementById('workHours');
+    for(let i=1; i<=12; i++) {
+        let opt = document.createElement('option');
