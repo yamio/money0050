@@ -43,7 +43,8 @@
         }
         .time-text { font-size: 1.1rem; color: #3c4043; font-weight: 500; }
         .money-text { font-size: 3rem; color: #27ae60; font-weight: 800; margin: 10px 0; }
-        .money-unit { font-size: 0.9rem; color: #7f8c8d; }
+        .money-unit { font-size: 0.9rem; color: #7f8c8d; line-height: 1.4; }
+        .rule-info { font-size: 0.8rem; color: #95a5a6; margin-top: 10px; text-align: left; }
     </style>
 </head>
 <body>
@@ -62,7 +63,7 @@
     <div class="input-group">
         <label>上班時間 (起點)</label>
         <div class="time-select-wrap">
-            <select id="startHour"></select> 小時
+            <select id="startHour"></select> 時
             <select id="startMin"></select> 分
         </div>
     </div>
@@ -89,18 +90,118 @@
     <div class="display-section">
         <div id="timeElapsed" class="time-text">已經上班 0時 0分 0秒</div>
         <div id="moneyEarned" class="money-text">0.0</div>
-        <div class="money-unit">目前已賺取金額 (元)</div>
+        <div class="money-unit">目前已賺取金額 (元)<br><small>(自動扣除午休1H及加班休息0.5H)</small></div>
+    </div>
+    
+    <div class="rule-info">
+        ※ 邏輯：滿 5 小時扣 60 分鐘午休；滿 8 小時加扣 30 分鐘加班休息。
     </div>
 </div>
 
 <script>
-    // 初始化生成選單
     const hourSelect = document.getElementById('startHour');
     const minSelect = document.getElementById('startMin');
 
-    // 生成 00-23 小時
     for (let i = 0; i < 24; i++) {
         let opt = document.createElement('option');
+        opt.value = i; opt.innerText = i < 10 ? '0' + i : i;
+        if (i === 7) opt.selected = true;
+        hourSelect.appendChild(opt);
+    }
+    for (let i = 0; i < 60; i++) {
+        let opt = document.createElement('option');
+        opt.value = i; opt.innerText = i < 10 ? '0' + i : i;
+        if (i === 30) opt.selected = true;
+        minSelect.appendChild(opt);
+    }
+
+    let timer = null;
+
+    document.getElementById('startBtn').addEventListener('click', function() {
+        if (timer) clearInterval(timer);
+        runCalculation();
+        timer = setInterval(runCalculation, 1000);
+    });
+
+    function runCalculation() {
+        const now = new Date();
+        const startH = parseInt(document.getElementById('startHour').value);
+        const startM = parseInt(document.getElementById('startMin').value);
+        const startTime = new Date();
+        startTime.setHours(startH, startM, 0, 0);
+
+        if (now < startTime) {
+            document.getElementById('timeElapsed').innerText = "尚未到上班時間";
+            document.getElementById('moneyEarned').innerText = "0.0";
+            return;
+        }
+
+        // 總流逝秒數 (包含休息時間)
+        let rawDiffSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+        const maxWorkHours = parseInt(document.getElementById('workHours').value);
+        
+        // 計算應扣除的休息秒數
+        let breakSeconds = 0;
+        // 1. 午休 1 小時 (通常在工作 4-5 小時後發生)
+        if (rawDiffSeconds > 5 * 3600) {
+            breakSeconds += 3600;
+        }
+        // 2. 加班前休息 30 分鐘 (工作滿 8 小時 + 1 小時午休 = 總流逝 9 小時後)
+        if (rawDiffSeconds > 9 * 3600) {
+            breakSeconds += 1800;
+        }
+
+        // 實際工作秒數 (扣除休息)
+        let workSeconds = rawDiffSeconds - breakSeconds;
+        if (workSeconds < 0) workSeconds = 0;
+
+        // 判斷是否超過預計工作時長
+        const maxWorkSeconds = maxWorkHours * 3600;
+        let isOffWork = false;
+        if (workSeconds >= maxWorkSeconds) {
+            workSeconds = maxWorkSeconds;
+            isOffWork = true;
+            clearInterval(timer);
+        }
+
+        // 顯示時間 (顯示扣除休息後的實際工時)
+        const h = Math.floor(workSeconds / 3600);
+        const m = Math.floor((workSeconds % 3600) / 60);
+        const s = workSeconds % 60;
+        document.getElementById('timeElapsed').innerText = 
+            (isOffWork ? "已完成工時：" : "已經上班 ") + `${h}時 ${m}分 ${s}秒`;
+
+        // 薪水計算
+        const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+        const dayType = document.getElementById('dayType').value;
+        const baseRateSec = hourlyRate / 3600;
+        let totalEarned = 0;
+
+        if (dayType === 'weekday') {
+            if (workSeconds <= 8 * 3600) {
+                totalEarned = workSeconds * baseRateSec;
+            } else if (workSeconds <= 10 * 3600) {
+                totalEarned = (8 * 3600 * baseRateSec) + (workSeconds - 8 * 3600) * baseRateSec * 1.34;
+            } else {
+                totalEarned = (8 * 3600 * baseRateSec) + (2 * 3600 * baseRateSec * 1.34) + (workSeconds - 10 * 3600) * baseRateSec * 1.67;
+            }
+        } else {
+            // 休息日
+            if (workSeconds <= 2 * 3600) {
+                totalEarned = workSeconds * baseRateSec * 1.34;
+            } else if (workSeconds <= 8 * 3600) {
+                totalEarned = (2 * 3600 * baseRateSec * 1.34) + (workSeconds - 2 * 3600) * baseRateSec * 1.67;
+            } else {
+                totalEarned = (2 * 3600 * baseRateSec * 1.34) + (6 * 3600 * baseRateSec * 1.67) + (workSeconds - 8 * 3600) * baseRateSec * 2.67;
+            }
+        }
+
+        document.getElementById('moneyEarned').innerText = totalEarned.toFixed(1);
+    }
+</script>
+
+</body>
+</html>
         let val = i < 10 ? '0' + i : i;
         opt.value = i;
         opt.innerText = val;
