@@ -16,13 +16,13 @@
         }
         .card {
             background: white;
-            padding: 2rem;
+            padding: 2.5rem;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             width: 380px;
             text-align: center;
         }
-        h2 { color: #d63031; margin-bottom: 1.5rem; }
+        h2 { color: #d63031; margin-bottom: 1.5rem; letter-spacing: 2px; }
         .input-group { margin-bottom: 15px; text-align: left; }
         label { display: block; font-size: 0.9rem; color: #5f6368; margin-bottom: 5px; font-weight: bold; }
         .time-select-wrap { display: flex; gap: 10px; align-items: center; }
@@ -33,18 +33,17 @@
         }
         .time-select-wrap select { flex: 1; }
         button {
-            width: 100%; padding: 12px; background-color: #0984e3;
+            width: 100%; padding: 14px; background-color: #0984e3;
             color: white; border: none; border-radius: 8px;
             font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px;
         }
-        button:active { transform: scale(0.98); }
+        button:active { transform: scale(0.97); }
         .display-section {
             margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px dashed #e8eaed;
         }
         .time-text { font-size: 1.1rem; color: #3c4043; font-weight: 500; }
-        .money-text { font-size: 3rem; color: #27ae60; font-weight: 800; margin: 10px 0; }
-        .money-unit { font-size: 0.9rem; color: #7f8c8d; line-height: 1.4; }
-        .rule-info { font-size: 0.8rem; color: #95a5a6; margin-top: 10px; text-align: left; }
+        .money-text { font-size: 3.2rem; color: #27ae60; font-weight: 800; margin: 10px 0; }
+        .money-unit { font-size: 0.95rem; color: #7f8c8d; }
     </style>
 </head>
 <body>
@@ -90,11 +89,7 @@
     <div class="display-section">
         <div id="timeElapsed" class="time-text">已經上班 0時 0分 0秒</div>
         <div id="moneyEarned" class="money-text">0.0</div>
-        <div class="money-unit">目前已賺取金額 (元)<br><small>(自動扣除午休1H及加班休息0.5H)</small></div>
-    </div>
-    
-    <div class="rule-info">
-        ※ 邏輯：滿 5 小時扣 60 分鐘午休；滿 8 小時加扣 30 分鐘加班休息。
+        <div class="money-unit">目前已賺取金額 (元)</div>
     </div>
 </div>
 
@@ -136,42 +131,44 @@
             return;
         }
 
-        // 總流逝秒數 (包含休息時間)
+        // 總流逝時間 (秒)
         let rawDiffSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+        let workSeconds = 0;
+
+        // --- 核心邏輯：斷點式扣除 ---
+        if (rawDiffSeconds <= 4 * 3600) {
+            // 0-4小時：正常增加
+            workSeconds = rawDiffSeconds;
+        } else if (rawDiffSeconds <= 5 * 3600) {
+            // 4-5小時：凍結在4小時 (午休)
+            workSeconds = 4 * 3600;
+        } else if (rawDiffSeconds <= 9 * 3600) {
+            // 5-9小時：繼續增加 (已扣除1小時午休)
+            workSeconds = rawDiffSeconds - 3600;
+        } else if (rawDiffSeconds <= 9.5 * 3600) {
+            // 9-9.5小時：凍結在8小時 (加班前休息)
+            workSeconds = 8 * 3600;
+        } else {
+            // 9.5小時以上：繼續增加 (已扣除1.5小時總休息)
+            workSeconds = rawDiffSeconds - (3600 + 1800);
+        }
+
         const maxWorkHours = parseInt(document.getElementById('workHours').value);
-        
-        // 計算應扣除的休息秒數
-        let breakSeconds = 0;
-        // 1. 午休 1 小時 (通常在工作 4-5 小時後發生)
-        if (rawDiffSeconds > 5 * 3600) {
-            breakSeconds += 3600;
-        }
-        // 2. 加班前休息 30 分鐘 (工作滿 8 小時 + 1 小時午休 = 總流逝 9 小時後)
-        if (rawDiffSeconds > 9 * 3600) {
-            breakSeconds += 1800;
-        }
-
-        // 實際工作秒數 (扣除休息)
-        let workSeconds = rawDiffSeconds - breakSeconds;
-        if (workSeconds < 0) workSeconds = 0;
-
-        // 判斷是否超過預計工作時長
         const maxWorkSeconds = maxWorkHours * 3600;
         let isOffWork = false;
+
         if (workSeconds >= maxWorkSeconds) {
             workSeconds = maxWorkSeconds;
             isOffWork = true;
             clearInterval(timer);
         }
 
-        // 顯示時間 (顯示扣除休息後的實際工時)
         const h = Math.floor(workSeconds / 3600);
         const m = Math.floor((workSeconds % 3600) / 60);
         const s = workSeconds % 60;
         document.getElementById('timeElapsed').innerText = 
             (isOffWork ? "已完成工時：" : "已經上班 ") + `${h}時 ${m}分 ${s}秒`;
 
-        // 薪水計算
         const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
         const dayType = document.getElementById('dayType').value;
         const baseRateSec = hourlyRate / 3600;
@@ -186,7 +183,6 @@
                 totalEarned = (8 * 3600 * baseRateSec) + (2 * 3600 * baseRateSec * 1.34) + (workSeconds - 10 * 3600) * baseRateSec * 1.67;
             }
         } else {
-            // 休息日
             if (workSeconds <= 2 * 3600) {
                 totalEarned = workSeconds * baseRateSec * 1.34;
             } else if (workSeconds <= 8 * 3600) {
@@ -195,7 +191,6 @@
                 totalEarned = (2 * 3600 * baseRateSec * 1.34) + (6 * 3600 * baseRateSec * 1.67) + (workSeconds - 8 * 3600) * baseRateSec * 2.67;
             }
         }
-
         document.getElementById('moneyEarned').innerText = totalEarned.toFixed(1);
     }
 </script>
