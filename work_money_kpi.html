@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>薪水小偷換算表</title>
+    <style>
+        body {
+            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 380px;
+            text-align: center;
+        }
+        h2 { color: #d63031; margin-bottom: 1.5rem; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; font-size: 0.9rem; color: #5f6368; margin-bottom: 5px; font-weight: bold; }
+        .time-select-wrap { display: flex; gap: 10px; align-items: center; }
+        input, select {
+            width: 100%; padding: 10px; border: 1px solid #dadce0;
+            border-radius: 8px; box-sizing: border-box; font-size: 1rem;
+            background-color: #fff;
+        }
+        .time-select-wrap select { flex: 1; }
+        button {
+            width: 100%; padding: 12px; background-color: #0984e3;
+            color: white; border: none; border-radius: 8px;
+            font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+        button:active { transform: scale(0.98); }
+        .display-section {
+            margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px dashed #e8eaed;
+        }
+        .time-text { font-size: 1.1rem; color: #3c4043; font-weight: 500; }
+        .money-text { font-size: 3rem; color: #27ae60; font-weight: 800; margin: 10px 0; }
+        .money-unit { font-size: 0.9rem; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🥷 薪水小偷換算表</h2>
+    
+    <div class="input-group">
+        <label>當前日期類型</label>
+        <select id="dayType">
+            <option value="weekday">平日 (第9H起加班)</option>
+            <option value="holiday">休息日 (加班費率制)</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label>上班時間 (起點)</label>
+        <div class="time-select-wrap">
+            <select id="startHour"></select> 小時
+            <select id="startMin"></select> 分
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label>您的時薪 (TWD)</label>
+        <input type="number" id="hourlyRate" value="197">
+    </div>
+    
+    <div class="input-group">
+        <label>預計工作時長 (小時)</label>
+        <select id="workHours">
+            <option value="1">1 小時</option><option value="2">2 小時</option>
+            <option value="3">3 小時</option><option value="4">4 小時</option>
+            <option value="5">5 小時</option><option value="6">6 小時</option>
+            <option value="7">7 小時</option><option value="8" selected>8 小時</option>
+            <option value="9">9 小時</option><option value="10">10 小時</option>
+            <option value="11">11 小時</option><option value="12">12 小時</option>
+        </select>
+    </div>
+
+    <button id="startBtn">開始計算</button>
+
+    <div class="display-section">
+        <div id="timeElapsed" class="time-text">已經上班 0時 0分 0秒</div>
+        <div id="moneyEarned" class="money-text">0.0</div>
+        <div class="money-unit">目前已賺取金額 (元)</div>
+    </div>
+</div>
+
+<script>
+    // 初始化生成選單
+    const hourSelect = document.getElementById('startHour');
+    const minSelect = document.getElementById('startMin');
+
+    // 生成 00-23 小時
+    for (let i = 0; i < 24; i++) {
+        let opt = document.createElement('option');
+        let val = i < 10 ? '0' + i : i;
+        opt.value = i;
+        opt.innerText = val;
+        if (i === 7) opt.selected = true; // 預設 07 時
+        hourSelect.appendChild(opt);
+    }
+
+    // 生成 00-59 分
+    for (let i = 0; i < 60; i++) {
+        let opt = document.createElement('option');
+        let val = i < 10 ? '0' + i : i;
+        opt.value = i;
+        opt.innerText = val;
+        if (i === 30) opt.selected = true; // 預設 30 分
+        minSelect.appendChild(opt);
+    }
+
+    let timer = null;
+
+    document.getElementById('startBtn').addEventListener('click', function() {
+        if (timer) clearInterval(timer);
+        runCalculation();
+        timer = setInterval(runCalculation, 1000);
+    });
+
+    function runCalculation() {
+        const now = new Date();
+        const startH = parseInt(document.getElementById('startHour').value);
+        const startM = parseInt(document.getElementById('startMin').value);
+        
+        const startTime = new Date();
+        startTime.setHours(startH, startM, 0, 0);
+
+        if (now < startTime) {
+            const displayH = startH < 10 ? '0' + startH : startH;
+            const displayM = startM < 10 ? '0' + startM : startM;
+            document.getElementById('timeElapsed').innerText = "尚未到上班時間 (" + displayH + ":" + displayM + ")";
+            document.getElementById('moneyEarned').innerText = "0.0";
+            return;
+        }
+
+        let diffInSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+        const maxWorkHours = parseInt(document.getElementById('workHours').value);
+        const maxSeconds = maxWorkHours * 3600;
+
+        let isOffWork = false;
+        if (diffInSeconds >= maxSeconds) {
+            diffInSeconds = maxSeconds;
+            isOffWork = true;
+            clearInterval(timer);
+        }
+
+        const h = Math.floor(diffInSeconds / 3600);
+        const m = Math.floor((diffInSeconds % 3600) / 60);
+        const s = diffInSeconds % 60;
+        
+        document.getElementById('timeElapsed').innerText = 
+            (isOffWork ? "已完成時長：" : "已經上班 ") + `${h}時 ${m}分 ${s}秒`;
+
+        const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+        const dayType = document.getElementById('dayType').value;
+        const baseRateSec = hourlyRate / 3600;
+        let totalEarned = 0;
+
+        if (dayType === 'weekday') {
+            if (diffInSeconds <= 8 * 3600) {
+                totalEarned = diffInSeconds * baseRateSec;
+            } else if (diffInSeconds <= 10 * 3600) {
+                totalEarned = (8 * 3600 * baseRateSec) + (diffInSeconds - 8 * 3600) * baseRateSec * 1.34;
+            } else {
+                totalEarned = (8 * 3600 * baseRateSec) + (2 * 3600 * baseRateSec * 1.34) + (diffInSeconds - 10 * 3600) * baseRateSec * 1.67;
+            }
+        } else {
+            if (diffInSeconds <= 2 * 3600) {
+                totalEarned = diffInSeconds * baseRateSec * 1.34;
+            } else if (diffInSeconds <= 8 * 3600) {
+                totalEarned = (2 * 3600 * baseRateSec * 1.34) + (diffInSeconds - 2 * 3600) * baseRateSec * 1.67;
+            } else {
+                totalEarned = (2 * 3600 * baseRateSec * 1.34) + (6 * 3600 * baseRateSec * 1.67) + (diffInSeconds - 8 * 3600) * baseRateSec * 2.67;
+            }
+        }
+
+        document.getElementById('moneyEarned').innerText = totalEarned.toFixed(1);
+    }
+</script>
+
+</body>
+</html>
+
