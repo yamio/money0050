@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>跨性別女性傾向自我反思問卷</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+        .description {
+            background-color: #e2f0cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+        .question-block {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .question-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .options label {
+            display: block;
+            margin-bottom: 8px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .options label:hover {
+            background-color: #f0f4f8;
+        }
+        input[type="radio"] {
+            margin-right: 10px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            color: #fff;
+            background-color: #3498db;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #result-section {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e8f4f8;
+            border-left: 5px solid #3498db;
+            border-radius: 5px;
+        }
+        .score-display {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #e74c3c;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .disclaimer {
+            margin-top: 20px;
+            font-size: 0.85em;
+            color: #7f8c8d;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>跨性別女性傾向自我反思問卷<br><span style="font-size: 0.6em; color: #7f8c8d;">（選擇題版）</span></h1>
+    
+    <div class="description">
+        <strong>說明：</strong> 請根據你真實的感受，為每道題選擇一個最符合的選項。每個選項背後有一個分數（已打亂，不會按A/B/C/D順序遞增）。完成所有題目後，點擊最下方的送出按鈕，系統將自動計算並提供對應的提示。
+    </div>
+
+    <form id="quizForm">
+        </form>
+
+    <button type="button" onclick="calculateScore()">送出並查看結果</button>
+
+    <div id="result-section">
+        <div class="score-display">你的總得分：<span id="total-score">0</span> 分</div>
+        <div id="result-text"></div>
+        <div class="disclaimer">
+            <strong>最後重申：</strong> 任何分數都不能代替你的自我認知。如果你在探索中感到痛苦，請務必聯繫心理健康專業人士或跨性別社群支持組織。你的感受是真實且重要的。
+        </div>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        {
+            id: 'q1',
+            text: '1. 假如有一個絕對安全、無副作用的「性別轉換按鈕」，按下後你會立刻擁有女性身體，且所有人都自然地把你當作女性。你會怎麼做？',
+            options: [
+                { value: 'A', text: 'A. 毫不猶豫立刻按下' },
+                { value: 'B', text: 'B. 猶豫，但最終會按' },
+                { value: 'C', text: 'C. 不確定，需要想很久' },
+                { value: 'D', text: 'D. 可能不會按，但有好奇' },
+                { value: 'E', text: 'E. 絕對不會按' }
+            ]
+        },
+        {
+            id: 'q2',
+            text: '2. 當你被人用「他/先生/小夥子」等男性化稱呼時，你內心最接近的感受是？',
+            options: [
+                { value: 'A', text: 'A. 無所謂，聽習慣了' },
+                { value: 'B', text: 'B. 輕微不舒服，但能接受' },
+                { value: 'C', text: 'C. 明顯彆扭，希望被叫別的' },
+                { value: 'D', text: 'D. 非常難受，甚至感到痛苦' },
+                { value: 'E', text: 'E. 反而覺得安心、自在' }
+            ]
+        },
+        {
+            id: 'q3',
+            text: '3. 觀察自己的身體（如喉結、鬍鬚、肩膀寬度等男性化特徵），你的感受通常是？',
+            options: [
+                { value: 'A', text: 'A. 完全接受，不覺得有問題' },
+                { value: 'B', text: 'B. 偶爾有點不滿意，但整體OK' },
+                { value: 'C', text: 'C. 經常感到違和，不喜歡某些部位' },
+                { value: 'D', text: 'D. 強烈厭惡，希望改變它們' },
+                { value: 'E', text: 'E. 沒有特別感覺，很少注意' }
+            ]
+        },
+        {
+            id: 'q4',
+            text: '4. 如果讓你想像自己60歲時的樣子，你更傾向於？',
+            options: [
+                { value: 'A', text: 'A. 一位老奶奶' },
+                { value: 'B', text: 'B. 一位老爺爺' },
+                { value: 'C', text: 'C. 中性或無法明確性別' },
+                { value: 'D', text: 'D. 從沒想過這個問題' },
+                { value: 'E', text: 'E. 完全不想變老' }
+            ]
+        },
+        {
+            id: 'q5',
+            text: '5. 在電腦遊戲或虛擬角色裡，你通常會選擇？',
+            options: [
+                { value: 'A', text: 'A. 總是選女性角色' },
+                { value: 'B', text: 'B. 多數情況選女性角色' },
+                { value: 'C', text: 'C. 一半一半，或隨心情' },
+                { value: 'D', text: 'D. 多數情況選男性角色' },
+                { value: 'E', text: 'E. 總是選男性角色' }
+            ]
+        },
+        {
+            id: 'q6',
+            text: '6. 當你看到跨性別女性的故事、照片或影片時，內心反應更接近？',
+            options: [
+                { value: 'A', text: 'A. 強烈共鳴，甚至羨慕或激動' },
+                { value: 'B', text: 'B. 有點好奇，會想「我會不會也這樣」' },
+                { value: 'C', text: 'C. 尊重但不覺得與自己有關' },
+                { value: 'D', text: 'D. 有些排斥或困惑' },
+                { value: 'E', text: 'E. 完全無感' }
+            ]
+        },
+        {
+            id: 'q7',
+            text: '7. 如果拋開手術費用、家人反應、社會歧視等現實困難，僅從內心願望出發，你希望以女性身份生活嗎？',
+            options: [
+                { value: 'A', text: 'A. 非常希望，那就是真正的我' },
+                { value: 'B', text: 'B. 比較希望，但也可以接受男性身份' },
+                { value: 'C', text: 'C. 不確定，兩種都有吸引力' },
+                { value: 'D', text: 'D. 不太希望，更喜歡男性身份' },
+                { value: 'E', text: 'E. 完全不希望' }
+            ]
+        },
+        {
+            id: 'q8',
+            text: '8. 關於你的身份證/出生證明上的性別標記，你內心的感受是？',
+            options: [
+                { value: 'A', text: 'A. 覺得完全正確，很安心' },
+                { value: 'B', text: 'B. 沒什麼感覺，就是個標記' },
+                { value: 'C', text: 'C. 偶爾覺得「要是改成女就好了」' },
+                { value: 'D', text: 'D. 經常覺得彆扭，希望是女' },
+                { value: 'E', text: 'E. 強烈覺得那是個錯誤' }
+            ]
+        },
+        {
+            id: 'q9',
+            text: '9. 在一個完全沒人認識你的新環境（如旅行、網路聊天室），你會更傾向於如何介紹自己？',
+            options: [
+                { value: 'A', text: 'A. 直接說自己是女性' },
+                { value: 'B', text: 'B. 使用女性化名字/代詞，不特別說明' },
+                { value: 'C', text: 'C. 保持中性，避免性別信息' },
+                { value: 'D', text: 'D. 使用男性身份但心裡不爽' },
+                { value: 'E', text: 'E. 自然地用男性身份，很舒服' }
+            ]
+        },
+        {
+            id: 'q10',
+            text: '10. 綜合所有因素，你對自己「是否應該成為女性」這個問題的內心答案接近？',
+            options: [
+                { value: 'A', text: 'A. 我本來就是女性，只是身體不匹配' },
+                { value: 'B', text: 'B. 我覺得做女性會讓我更完整' },
+                { value: 'C', text: 'C. 我還在探索，不排除這種可能' },
+                { value: 'D', text: 'D. 我可能是，但不重要' },
+                { value: 'E', text: 'E. 我不是女性，我是男性' }
+            ]
+        }
+    ];
+
+    // 計分對照表
+    const scoringMap = {
+        q1: { A: 4, B: 3, C: 2, D: 1, E: 0 },
+        q2: { A: 0, B: 1, C: 2, D: 4, E: 0 },
+        q3: { A: 0, B: 1, C: 3, D: 4, E: 2 },
+        q4: { A: 4, B: 0, C: 2, D: 1, E: 3 },
+        q5: { A: 4, B: 3, C: 2, D: 1, E: 0 },
+        q6: { A: 4, B: 3, C: 1, D: 0, E: 2 },
+        q7: { A: 4, B: 3, C: 2, D: 1, E: 0 },
+        q8: { A: 0, B: 1, C: 2, D: 3, E: 4 },
+        q9: { A: 4, B: 3, C: 2, D: 1, E: 0 },
+        q10:{ A: 4, B: 3, C: 2, D: 1, E: 0 }
+    };
+
+    // 動態生成表單
+    const formContainer = document.getElementById('quizForm');
+    questions.forEach((q, index) => {
+        const questionDiv = document.createElement('div');
+        questionDiv.className = 'question-block';
+        
+        const title = document.createElement('div');
+        title.className = 'question-title';
+        title.innerText = q.text;
+        questionDiv.appendChild(title);
+
+        const optionsDiv = document.createElement('div');
+        optionsDiv.className = 'options';
+
+        q.options.forEach(opt => {
+            const label = document.createElement('label');
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.name = q.id;
+            input.value = opt.value;
+            
+            label.appendChild(input);
+            label.appendChild(document.createTextNode(opt.text));
+            optionsDiv.appendChild(label);
+        });
+
+        questionDiv.appendChild(optionsDiv);
+        formContainer.appendChild(questionDiv);
+    });
+
+    function calculateScore() {
+        let totalScore = 0;
+        let allAnswered = true;
+
+        // 遍歷所有問題計算分數
+        for (let i = 1; i <= 10; i++) {
+            const qId = 'q' + i;
+            const selectedOption = document.querySelector(`input[name="${qId}"]:checked`);
+            
+            if (selectedOption) {
+                totalScore += scoringMap[qId][selectedOption.value];
+            } else {
+                allAnswered = false;
+                break;
+            }
+        }
+
+        if (!allAnswered) {
+            alert('請回答所有問題後再送出唷！');
+            return;
+        }
+
+        // 顯示結果
+        document.getElementById('total-score').innerText = totalScore;
+        const resultSection = document.getElementById('result-section');
+        const resultText = document.getElementById('result-text');
+
+        let feedback = '';
+        if (totalScore >= 0 && totalScore <= 12) {
+            feedback = '<strong>【0-12分】：</strong>你的回答模式與大多數順性別男性（非跨性別）高度一致。當然，少數跨性別女性早期也可能得分很低，尤其是壓抑或未覺察階段。建議保持開放，繼續關注自己的真實感受。';
+        } else if (totalScore >= 13 && totalScore <= 25) {
+            feedback = '<strong>【13-25分】：</strong>存在一些矛盾或探索中的跡象。你可能在某些情境下感受到性別不一致，但整體尚未清晰。這是值得深入自我觀察的區間，可以寫日記、與信任的人或性別友善諮詢師聊聊。';
+        } else if (totalScore >= 26 && totalScore <= 40) {
+            feedback = '<strong>【26-40分】：</strong>你的回答模式與許多自我認同為跨性別女性的個體相似。這提示你的內心感受與出生分配的男性性別有顯著不一致。強烈建議尋求專業的性別認同支持，但請記住——只有你自己才能最終確認自己的身份。';
+        }
+
+        resultText.innerHTML = `<p>${feedback}</p>`;
+        resultSection.style.display = 'block';
+        
+        // 自動捲動到結果區塊
+        resultSection.scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+
+</body>
+</html>
+
