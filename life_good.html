@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的退休儀表板</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f7f9fa; color: #333; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); width: 100%; max-width: 450px; margin-bottom: 16px; box-sizing: border-box; }
+        .countdown-container { display: flex; justify-content: space-between; text-align: center; margin-top: 10px; }
+        .time-box { background: #f0f2f5; padding: 10px; border-radius: 12px; flex: 1; margin: 0 5px; }
+        .time-box div:first-child { font-size: 28px; font-weight: bold; }
+        .time-box div:last-child { font-size: 12px; color: #666; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid-item { background: white; border-radius: 16px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .grid-item .title { font-size: 13px; color: #666; margin-bottom: 5px; }
+        .grid-item .value { font-size: 18px; font-weight: bold; }
+        .progress-bar-bg { background: #e0e6ed; border-radius: 10px; height: 12px; width: 100%; margin-top: 8px; overflow: hidden; }
+        .progress-bar-fill { background: #4A65A4; height: 100%; width: 0%; transition: width 1s ease-in-out; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div style="text-align: center; font-weight: bold; color: #666;">距離退休還有</div>
+        <div class="countdown-container">
+            <div class="time-box"><div id="years">-</div><div>年</div></div>
+            <div class="time-box"><div id="months">-</div><div>月</div></div>
+            <div class="time-box"><div id="days">-</div><div>日</div></div>
+        </div>
+        <div style="text-align: center; font-size: 12px; color: #999; margin-top: 12px;">預計退休日期：2039年5月</div>
+    </div>
+
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold;">
+            <span>退休進度</span>
+            <span id="progress-text">0%</span>
+        </div>
+        <div class="progress-bar-bg"><div id="progress-fill" class="progress-bar-fill"></div></div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #999; margin-top: 8px;">
+            <span>金融資產淨值 <span id="current-asset-p">NT$0</span></span>
+            <span>目標 NT$18,000,000</span>
+        </div>
+    </div>
+
+    <div class="card" style="background: transparent; box-shadow: none; padding: 0;">
+        <div class="grid">
+            <div class="grid-item"><div class="title">總資產淨值</div><div class="value" id="total-asset">NT$0</div></div>
+            <div class="grid-item"><div class="title">金融資產淨值</div><div class="value" id="current-asset">NT$0</div></div>
+            <div class="grid-item"><div class="title">平均月儲蓄</div><div class="value" id="monthly-saving">NT$0</div></div>
+            <div class="grid-item"><div class="title">加權報酬率</div><div class="value" id="return-rate">0%</div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div style="font-weight: bold; margin-bottom: 10px;">金融資產淨值歷史</div>
+        <canvas id="historyChart"></canvas>
+    </div>
+
+    <script>
+        const TARGET_AMOUNT = 18000000;
+        const RETIREMENT_DATE = new Date('2039-05-01');
+
+        // 計算時間差（換算成年、月、日）
+        function calculateCountdown() {
+            const now = new Date();
+            let years = RETIREMENT_DATE.getFullYear() - now.getFullYear();
+            let months = RETIREMENT_DATE.getMonth() - now.getMonth();
+            let days = RETIREMENT_DATE.getDate() - now.getDate();
+
+            if (days < 0) {
+                months--;
+                const prevMonth = new Date(RETIREMENT_DATE.getFullYear(), RETIREMENT_DATE.getMonth(), 0);
+                days += prevMonth.getDate();
+            }
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+            document.getElementById('years').innerText = years;
+            document.getElementById('months').innerText = months;
+            document.getElementById('days').innerText = days;
+        }
+
+        // 解析 CSV 文本的簡單函式
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',');
+            const result = [];
+            for (let i = 1; i < lines.length; i++) {
+                const currentLine = lines[i].split(',');
+                if (currentLine.length === headers.length) {
+                    const obj = {};
+                    for (let j = 0; j < headers.length; j++) {
+                        obj[headers[j].trim()] = currentLine[j].trim();
+                    }
+                    result.push(obj);
+                }
+            }
+            return result;
+        }
+
+        // 主程式：讀取 CSV 並渲染網頁
+        // 這裡直接讀取同目錄下的 data.csv 檔案
+        fetch('data.csv')
+            .then(response => response.text())
+            .then(csvText => {
+                const data = parseCSV(csvText);
+                const latest = data[data.length - 1]; // 取得最新一筆資料
+
+                // 1. 更新數字與進度條
+                const netWorth = parseInt(latest.net_worth);
+                const progress = ((netWorth / TARGET_AMOUNT) * 100).toFixed(1);
+                
+                document.getElementById('progress-text').innerText = progress + '%';
+                document.getElementById('progress-fill').style.width = progress + '%';
+                document.getElementById('current-asset-p').innerText = 'NT$' + netWorth.toLocaleString();
+                document.getElementById('total-asset').innerText = 'NT$' + netWorth.toLocaleString();
+                document.getElementById('current-asset').innerText = 'NT$' + netWorth.toLocaleString();
+                document.getElementById('monthly-saving').innerText = 'NT$' + parseInt(latest.monthly_savings).toLocaleString();
+                document.getElementById('return-rate').innerText = latest.return_rate + '%';
+
+                // 2. 準備圖表數據
+                const labels = data.map(item => item.date.substring(5)); // 只取月-日 顯示較美觀
+                const chartData = data.map(item => parseInt(item.net_worth));
+
+                // 3. 畫折線圖
+                const ctx = document.getElementById('historyChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '淨值',
+                            data: chartData,
+                            borderColor: '#4A65A4',
+                            backgroundColor: 'rgba(74, 101, 164, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#4A65A4'
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { display: false } },
+                        scales: { y: { grid: { display: false } }, x: { grid: { display: false } } }
+                    }
+                });
+            })
+            .catch(err => console.error('讀取 CSV 失敗，請檢查 data.csv 檔案是否存在', err));
+
+        calculateCountdown();
+    </script>
+</body>
+</html>
