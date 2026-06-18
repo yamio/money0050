@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人資產儀表板</title>
+    <style>
+        body { 
+            background-color: #000; 
+            color: #fff; 
+            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; 
+            padding: 20px; 
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+        h2 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 20px; 
+            font-size: 1.1rem;
+        }
+        th, td { 
+            border-bottom: 1px solid #333; 
+            padding: 12px 10px; 
+            text-align: right; 
+        }
+        th { color: #aaa; font-weight: normal; }
+        .text-left { text-align: left; }
+        .shares { color: #d35400; font-weight: bold; } /* 股數橘色高亮 */
+        .up { color: #ff4d4d; } /* 台灣股市紅漲 */
+        .down { color: #00e676; } /* 台灣股市綠跌 */
+        .summary-box {
+            background: #111; 
+            padding: 20px; 
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .summary-box p { margin: 10px 0; font-size: 1.1rem; }
+        .total-val { font-size: 1.8rem; font-weight: bold; }
+        button {
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        button:hover { background-color: #444; }
+        #loading { color: #aaa; text-align: center; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>即時資產監控</h2>
+    
+    <div id="loading">載入 CSV 與即時股價中，請稍候...</div>
+
+    <table id="dataTable" style="display: none;">
+        <thead>
+            <tr>
+                <th class="text-left">股票名稱</th>
+                <th>代號</th>
+                <th>股數</th>
+                <th>市價</th>
+                <th>總價</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <div class="summary-box" id="summaryBox" style="display: none;">
+        <p>今日目前總資產： <span class="total-val" id="currentTotal">0</span></p>
+        <p>昨日收盤總資產： <span id="yesterdayTotal">無紀錄</span></p>
+        <p>今日資產漲跌： <strong id="dailyDiff">0</strong></p>
+        
+        <button onclick="saveTodayAsYesterday()">將當前總額記錄為「昨日收盤」</button>
+        <p style="font-size: 0.8rem; color: #777; margin-top: 10px;">
+            ※ 請在每日台股收盤後點擊此按鈕，系統會將總額存在您的瀏覽器中，供明天比對漲跌。
+        </p>
+    </div>
+</div>
+
+<script>
+    let currentTotalValue = 0;
+
+    // 啟動主程式
+    async function init() {
+        try {
+            // 1. 讀取 CSV
+            const response = await fetch('portfolio.csv');
+            if (!response.ok) throw new Error("找不到 portfolio.csv，請確認檔案已上傳且名稱正確。");
+            const csvText = await response.text();
+            
+            // 2. 解析 CSV
+            const rows = csvText.trim().split('\n');
+            const dataRows = rows.slice(1); // 略過標題行
+            
+            let tbodyHtml = '';
+            currentTotalValue = 0;
+
+            // 3. 逐筆抓取股價
+            for (const row of dataRows) {
+                const cols = row.split(',');
+                if (cols.length < 3) continue;
+                
+                const stockId = cols[0].trim();
+                const stockName = cols[1].trim();
+                const shares = parseInt(cols[2].trim(), 10);
+                
+                // 透過免費代理伺服器抓取 Yahoo 股市報價 (.TW 適用於上市，若為上櫃建議自行在CSV加上.TWO)
+                const ticker = stockId + '.TW'; 
+                const yfUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(yfUrl)}`;
+                
+                let price = 0;
+                try {
+                    const priceRes = await fetch(proxyUrl);
+                    const priceData = await priceRes.json();
+                    price = priceData.chart.result[0].meta.regularMarketPrice;
+                } catch (err) {
+                    console.error(`無法抓取 ${stockId} 股價`, err);
+                    price = 0; // 若抓取失敗則顯示 0
+                }
+
+                const totalStr = (price * shares);
+                currentTotalValue += totalStr;
+
+                tbodyHtml += `
+                    <tr>
+                        <td class="text-left">${stockName}</td>
+                        <td>${stockId}</td>
+                        <td class="shares">${shares.toLocaleString()}</td>
+                        <td>${price > 0 ? price.toFixed(2) : 'N/A'}</td>
+                        <td>${totalStr > 0 ? Math.round(totalStr).toLocaleString() : 'N/A'}</td>
+                    </tr>
+                `;
+            }
+
+            // 4. 渲染表格與總額
+            document.getElementById('tableBody').innerHTML = tbodyHtml;
+            document.getElementById('currentTotal').innerText = Math.round(currentTotalValue).toLocaleString();
+            
+            // 5. 處理漲跌比對 (從 LocalStorage 讀取昨日紀錄)
+            calculateDiff();
+
+            // 顯示介面
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dataTable').style.display = 'table';
+            document.getElementById('summaryBox').style.display = 'block';
+
+        } catch (error) {
+            document.getElementById('loading').innerText = "發生錯誤：" + error.message;
+        }
+    }
+
+    function calculateDiff() {
+        const savedYesterday = localStorage.getItem('yesterdayTotalValue');
+        const diffEl = document.getElementById('dailyDiff');
+        const yestEl = document.getElementById('yesterdayTotal');
+
+        if (savedYesterday) {
+            const yesterdayNum = parseFloat(savedYesterday);
+            yestEl.innerText = Math.round(yesterdayNum).toLocaleString();
+            
+            const diff = currentTotalValue - yesterdayNum;
+            const diffRounded = Math.round(diff);
+            
+            if (diff > 0) {
+                diffEl.innerText = `▲ +${diffRounded.toLocaleString()}`;
+                diffEl.className = 'up';
+            } else if (diff < 0) {
+                diffEl.innerText = `▼ ${diffRounded.toLocaleString()}`;
+                diffEl.className = 'down';
+            } else {
+                diffEl.innerText = `0`;
+                diffEl.className = '';
+            }
+        } else {
+            yestEl.innerText = "尚無紀錄";
+            diffEl.innerText = "-";
+        }
+    }
+
+    // 點擊按鈕，將今日結算存入瀏覽器記憶體
+    function saveTodayAsYesterday() {
+        if (currentTotalValue > 0) {
+            localStorage.setItem('yesterdayTotalValue', currentTotalValue);
+            alert("已成功將總額記錄！明天打開網頁時，將以此金額比對漲跌。");
+            calculateDiff(); // 立即重新計算顯示
+        } else {
+            alert("目前總資產尚未載入完成或發生錯誤。");
+        }
+    }
+
+    // 啟動
+    init();
+</script>
+
+</body>
+</html>
+
