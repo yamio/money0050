@@ -4,45 +4,165 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Portfolio Dashboard | 個人資產現值監控</title>
+
     <style>
-        body { 
-            background-color: #000; 
-            color: #fff; 
-            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; 
-            padding: 30px 20px; 
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+            padding: 30px 20px;
             margin: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        .container { width: 100%; max-width: 850px; }
-        h2 { font-size: 1.6rem; font-weight: 600; border-bottom: 2px solid #222; padding-bottom: 15px; margin-bottom: 25px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 1.05rem; }
-        th, td { border-bottom: 1px solid #222; padding: 14px 12px; text-align: right; }
-        th { color: #888; font-weight: normal; font-size: 0.95rem; }
-        .text-left { text-align: left; }
-        .shares { color: #e67e22; font-weight: bold; } 
-        .up { color: #ff4d4d; } 
-        .down { color: #00e676; } 
-        .summary-box { background: #0a0a0a; padding: 25px; border-radius: 12px; border: 1px solid #222; }
-        .summary-box p { margin: 12px 0; font-size: 1.1rem; color: #ccc; }
-        .total-val { font-size: 2rem; font-weight: bold; color: #fff; }
-        button { background-color: #1c1c1e; color: white; border: 1px solid #3a3a3c; padding: 12px 20px; border-radius: 6px; cursor: pointer; margin-top: 15px; font-size: 0.95rem; transition: background 0.2s; }
-        button:hover { background-color: #2c2c2e; }
-        #loading { color: #666; text-align: center; margin: 40px 0; font-size: 1.1rem; }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            border-bottom: 2px solid #222;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            font-size: 1.05rem;
+        }
+
+        th, td {
+            border-bottom: 1px solid #222;
+            padding: 14px 12px;
+            text-align: right;
+        }
+
+        th {
+            color: #888;
+            font-weight: normal;
+            font-size: 0.95rem;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .shares {
+            color: #e67e22;
+            font-weight: bold;
+        }
+
+        .up {
+            color: #ff4d4d;
+        }
+
+        .down {
+            color: #00e676;
+        }
+
+        .summary-box {
+            background: #0a0a0a;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #222;
+        }
+
+        .summary-box p {
+            margin: 12px 0;
+            font-size: 1.1rem;
+            color: #ccc;
+        }
+
+        .total-val {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        button {
+            background-color: #1c1c1e;
+            color: white;
+            border: 1px solid #3a3a3c;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #2c2c2e;
+        }
+
+        #loading {
+            color: #666;
+            text-align: center;
+            margin: 40px 0;
+            font-size: 1.1rem;
+        }
+
+        .status {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .na {
+            color: #777;
+        }
+
+        @media (max-width: 720px) {
+            body {
+                padding: 20px 10px;
+            }
+
+            table {
+                font-size: 0.9rem;
+            }
+
+            th, td {
+                padding: 10px 6px;
+            }
+
+            .total-val {
+                font-size: 1.5rem;
+            }
+
+            .hide-mobile {
+                display: none;
+            }
+        }
     </style>
 </head>
+
 <body>
 
 <div class="container">
     <h2>即時資產現值監控系統</h2>
+
     <div id="loading">正在讀取庫存與更新市場報價...</div>
+    <div class="status" id="statusText"></div>
+
     <table id="dataTable" style="display: none;">
         <thead>
-            <tr><th class="text-left">資產名稱</th><th>代號</th><th>持有股數</th><th>即時市價</th><th>資產現值</th></tr>
+            <tr>
+                <th class="text-left">資產名稱</th>
+                <th>代號</th>
+                <th>持有股數</th>
+                <th>即時市價</th>
+                <th>資產現值</th>
+            </tr>
         </thead>
         <tbody id="tableBody"></tbody>
     </table>
+
     <div class="summary-box" id="summaryBox" style="display: none;">
         <p>今日總資產現值： <span class="total-val" id="currentTotal">0</span> TWD</p>
         <p>昨日基準總資產： <span id="yesterdayTotal">無紀錄</span> TWD</p>
@@ -55,71 +175,213 @@
     let currentTotalValue = 0;
 
     async function init() {
+        const loadingEl = document.getElementById('loading');
+        const statusEl = document.getElementById('statusText');
+
         try {
-            const response = await fetch('portfolio.csv?t=' + new Date().getTime());
-            if (!response.ok) throw new Error("未偵測到 portfolio.csv 檔案。");
+            loadingEl.style.display = 'block';
+            loadingEl.innerText = '正在讀取庫存與更新市場報價...';
+            statusEl.innerText = '';
+
+            const response = await fetch('portfolio.csv?t=' + Date.now());
+
+            if (!response.ok) {
+                throw new Error('未偵測到 portfolio.csv 檔案。請確認 portfolio.csv 與 HTML 在同一資料夾。');
+            }
+
             const csvText = await response.text();
-            const rows = csvText.replace(/\r/g, '').trim().split('\n');
-            const dataRows = rows.slice(1); 
-            let tbodyHtml = '';
+            const portfolio = parsePortfolioCsv(csvText);
+
+            if (portfolio.length === 0) {
+                throw new Error('portfolio.csv 沒有可讀取的資料。');
+            }
+
             currentTotalValue = 0;
 
-            for (const row of dataRows) {
-                const cols = row.split(',');
-                if (cols.length < 3) continue;
-                const stockId = cols[0].replace(/\s+/g, '').trim();
-                const stockName = cols[1].trim();
-                const shares = parseInt(cols[2].replace(/\s+/g, '').trim(), 10);
-                
-                const ticker = stockId + '.TW'; 
-                const yfUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(yfUrl)}`;
-                
-                let price = 0;
-                try {
-                    const priceRes = await fetch(proxyUrl);
-                    const priceData = await priceRes.json();
-                    price = priceData.chart.result[0].meta.regularMarketPrice;
-                } catch (err) { price = 0; }
+            const prices = await fetchTwsePrices(portfolio.map(item => item.stockId));
 
-                const totalStr = (price * shares);
-                currentTotalValue += totalStr;
-                tbodyHtml += `<tr><td class="text-left">${stockName}</td><td>${stockId}</td><td class="shares">${shares.toLocaleString()}</td><td>${price > 0 ? price.toFixed(2) : 'N/A'}</td><td>${totalStr > 0 ? Math.round(totalStr).toLocaleString() : 'N/A'}</td></tr>`;
+            let tbodyHtml = '';
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const item of portfolio) {
+                const price = prices[item.stockId] || 0;
+                const totalValue = price * item.shares;
+
+                if (price > 0) {
+                    successCount++;
+                    currentTotalValue += totalValue;
+                } else {
+                    failCount++;
+                }
+
+                tbodyHtml += `
+                    <tr>
+                        <td class="text-left">${escapeHtml(item.stockName)}</td>
+                        <td>${escapeHtml(item.stockId)}</td>
+                        <td class="shares">${item.shares.toLocaleString()}</td>
+                        <td class="${price > 0 ? '' : 'na'}">${price > 0 ? price.toFixed(2) : 'N/A'}</td>
+                        <td class="${totalValue > 0 ? '' : 'na'}">${totalValue > 0 ? Math.round(totalValue).toLocaleString() : 'N/A'}</td>
+                    </tr>
+                `;
             }
+
             document.getElementById('tableBody').innerHTML = tbodyHtml;
             document.getElementById('currentTotal').innerText = Math.round(currentTotalValue).toLocaleString();
+
             calculateDiff();
-            document.getElementById('loading').style.display = 'none';
+
+            loadingEl.style.display = 'none';
             document.getElementById('dataTable').style.display = 'table';
             document.getElementById('summaryBox').style.display = 'block';
-        } catch (error) { document.getElementById('loading').innerText = "系統錯誤：" + error.message; }
+
+            const now = new Date();
+            statusEl.innerText = `最後更新：${now.toLocaleString('zh-TW')}｜成功 ${successCount} 檔｜N/A ${failCount} 檔`;
+
+        } catch (error) {
+            loadingEl.style.display = 'block';
+            loadingEl.innerText = '系統錯誤：' + error.message;
+            console.error(error);
+        }
+    }
+
+    function parsePortfolioCsv(csvText) {
+        const rows = csvText
+            .replace(/\r/g, '')
+            .trim()
+            .split('\n')
+            .filter(row => row.trim() !== '');
+
+        const dataRows = rows.slice(1);
+
+        return dataRows
+            .map(row => row.split(','))
+            .filter(cols => cols.length >= 3)
+            .map(cols => {
+                const stockId = cols[0].replace(/\s+/g, '').trim();
+                const stockName = cols[1].trim();
+                const shares = parseInt(cols[2].replace(/[,\s]/g, '').trim(), 10);
+
+                return {
+                    stockId,
+                    stockName,
+                    shares
+                };
+            })
+            .filter(item => {
+                return item.stockId &&
+                       item.stockName &&
+                       Number.isFinite(item.shares) &&
+                       item.shares > 0;
+            });
+    }
+
+    async function fetchTwsePrices(stockIds) {
+        const prices = {};
+
+        const uniqueIds = [...new Set(stockIds)];
+
+        const exChList = uniqueIds.flatMap(id => [
+            `tse_${id}.tw`,
+            `otc_${id}.tw`
+        ]);
+
+        const url = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=${exChList.join('|')}&json=1&delay=0&_=${Date.now()}`;
+
+        try {
+            const res = await fetch(url, {
+                method: 'GET',
+                cache: 'no-store'
+            });
+
+            if (!res.ok) {
+                throw new Error('TWSE API 回應失敗');
+            }
+
+            const data = await res.json();
+
+            if (!data.msgArray || !Array.isArray(data.msgArray)) {
+                throw new Error('TWSE API 無有效資料');
+            }
+
+            for (const item of data.msgArray) {
+                const id = item.c;
+
+                /*
+                    item.z = 最近成交價
+                    item.y = 昨日收盤價
+                    當 z 為 "-" 時，代表目前無即時成交價，改用昨日收盤價 y。
+                */
+                const rawPrice = item.z && item.z !== '-' ? item.z : item.y;
+                const price = parseFloat(String(rawPrice).replace(/,/g, ''));
+
+                if (id && Number.isFinite(price) && price > 0) {
+                    prices[id] = price;
+                }
+            }
+
+        } catch (err) {
+            console.error('TWSE price fetch failed:', err);
+        }
+
+        return prices;
     }
 
     function calculateDiff() {
         const savedYesterday = localStorage.getItem('yesterdayTotalValue');
         const diffEl = document.getElementById('dailyDiff');
         const yestEl = document.getElementById('yesterdayTotal');
+
         if (savedYesterday) {
             const yesterdayNum = parseFloat(savedYesterday);
             yestEl.innerText = Math.round(yesterdayNum).toLocaleString();
+
             const diff = currentTotalValue - yesterdayNum;
-            if (diff > 0) { diffEl.innerText = `▲ +${Math.round(diff).toLocaleString()}`; diffEl.className = 'up'; }
-            else if (diff < 0) { diffEl.innerText = `▼ ${Math.round(diff).toLocaleString()}`; diffEl.className = 'down'; }
-            else { diffEl.innerText = `0`; diffEl.className = ''; }
+
+            if (diff > 0) {
+                diffEl.innerText = `▲ +${Math.round(diff).toLocaleString()}`;
+                diffEl.className = 'up';
+            } else if (diff < 0) {
+                diffEl.innerText = `▼ ${Math.round(diff).toLocaleString()}`;
+                diffEl.className = 'down';
+            } else {
+                diffEl.innerText = '0';
+                diffEl.className = '';
+            }
+        } else {
+            yestEl.innerText = '無紀錄';
+            diffEl.innerText = '0';
+            diffEl.className = '';
         }
     }
 
     function saveTodayAsYesterday() {
         if (currentTotalValue > 0) {
             localStorage.setItem('yesterdayTotalValue', currentTotalValue);
-            alert("基準金額已成功記錄。");
-            calculateDiff(); 
+            alert('基準金額已成功記錄。');
+            calculateDiff();
+        } else {
+            alert('目前總資產為 0，未寫入基準。');
         }
     }
 
-    // 啟動與自動刷新
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
     init();
-    setInterval(init, 30000); // 每 30 秒重新執行一次 init()
+
+    /*
+        60 秒刷新一次。
+        不建議 30 秒以下，避免 API 請求過於頻繁造成失敗或被限流。
+    */
+    setInterval(init, 60000);
 </script>
+
 </body>
 </html>
