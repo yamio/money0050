@@ -1,80 +1,225 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f4f2ff">
     <title>ㄅ一的成長進度追蹤</title>
+
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            background-color: #f8f9fa;
+            padding: 24px;
+            background:
+                radial-gradient(circle at 15% 15%, #e8e3ff 0%, transparent 35%),
+                radial-gradient(circle at 85% 85%, #ffe9ef 0%, transparent 35%),
+                linear-gradient(135deg, #f8f9ff, #fdf7fa);
+            color: #344054;
         }
+
         .container {
-            background: white;
-            padding: 2.5rem;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 390px;
+            padding: 35px 28px;
+            border-radius: 28px;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 20px 60px rgba(75, 65, 120, 0.12);
             text-align: center;
-            width: 320px;
+            animation: fadeIn 0.8s ease;
         }
-        h2 { color: #34495e; margin-bottom: 2rem; font-size: 1.4rem; letter-spacing: 1px; }
+
+        .header-icon {
+            width: 65px;
+            height: 65px;
+            margin: 0 auto 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 22px;
+            background: linear-gradient(135deg, #e9e2ff, #fce4ee);
+            font-size: 30px;
+        }
+
+        h2 {
+            color: #39435d;
+            margin: 0 0 8px;
+            font-size: 1.45rem;
+            letter-spacing: 2px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            color: #9aa1b5;
+            font-size: 0.85rem;
+            margin-bottom: 30px;
+        }
+
         .stat-box {
-            margin-bottom: 1.2rem;
-            padding: 1.5rem;
-            border-radius: 15px;
+            position: relative;
+            margin-bottom: 18px;
+            padding: 25px 18px;
+            border-radius: 20px;
+            overflow: hidden;
+            transition: transform 0.25s ease,
+                        box-shadow 0.25s ease;
         }
-        .paid { background-color: #ebfbee; color: #2b8a3e; border: 1px solid #d3f9d8; }
-        .countdown { background-color: #fff4e6; color: #d9480f; border: 1px solid #ffe8cc; }
-        .number { font-size: 2.2rem; font-weight: 800; display: block; margin-bottom: 5px; min-height: 2.5rem; }
-        .label { font-size: 0.95rem; font-weight: bold; }
-        .sub-text { font-size: 0.85rem; margin-top: 5px; display: block; opacity: 0.8; font-weight: 500; min-height: 1.2rem; }
+
+        .stat-box:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.07);
+        }
+
+        .paid {
+            background: linear-gradient(135deg, #e5f9ed, #f1fff5);
+            color: #268451;
+            border: 1px solid #d4f0df;
+        }
+
+        .countdown {
+            background: linear-gradient(135deg, #fff0e4, #fff8f0);
+            color: #d66a32;
+            border: 1px solid #ffe4cf;
+        }
+
+        .label {
+            display: block;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+
+        .number {
+            display: block;
+            font-size: 2.8rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            line-height: 1.2;
+            margin-bottom: 5px;
+            font-variant-numeric: tabular-nums;
+            animation: numberIn 0.7s ease;
+        }
+
+        .sub-text {
+            display: block;
+            margin-top: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            opacity: 0.8;
+            min-height: 1.2rem;
+        }
+
+        .footer {
+            margin-top: 25px;
+            color: #a4a9b9;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes numberIn {
+            from {
+                opacity: 0;
+                transform: scale(0.92);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @media (max-width: 420px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            .number {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
     </style>
 </head>
+
 <body>
 
 <div class="container">
+
+    <div class="header-icon">🌱</div>
+
     <h2>成長進度監測</h2>
-    
+    <div class="subtitle">每一個月，都是成長的累積</div>
+
     <div class="stat-box paid">
-        <span class="label">已支付</span>
+        <span class="label">✦ 已支付</span>
         <span class="number" id="paidMonths"></span>
     </div>
 
     <div class="stat-box countdown">
-        <span class="label">倒數成年</span>
+        <span class="label">✦ 倒數成年</span>
         <span class="number" id="remainingMonths"></span>
         <span id="remainingYears" class="sub-text"></span>
     </div>
+
+    <div class="footer">
+        EVERY MONTH IS A NEW MILESTONE
+    </div>
+
 </div>
 
 <script>
     window.onload = function() {
         const now = new Date();
         const curY = now.getFullYear();
-        const curM = now.getMonth(); 
+        const curM = now.getMonth();
         const curD = now.getDate();
 
         // 參數：2025/04/20 起算, 2034/08/01 成年
         const startY = 2025;
-        const startM = 3; 
+        const startM = 3;
         const adultY = 2034;
-        const adultM = 7; 
+        const adultM = 7;
 
         // --- 已支付計算 ---
         let monthsPassed = (curY - startY) * 12 + (curM - startM);
         let finalPaid = monthsPassed;
+
         if (curD >= 20) {
             finalPaid += 1;
         }
 
         // --- 倒數成年計算 ---
         let monthsRemaining = (adultY - curY) * 12 + (adultM - curM);
-        // 如果還沒到 20 日，這整個月都還在倒數中 (不扣掉)
+
         if (curD >= 20) {
             monthsRemaining -= 1;
         }
@@ -87,13 +232,18 @@
         const m = monthsRemaining % 12;
 
         // 寫入數據
-        document.getElementById('paidMonths').innerText = finalPaid + " 個月";
-        document.getElementById('remainingMonths').innerText = monthsRemaining + " 個月";
-        
+        document.getElementById('paidMonths').innerText =
+            finalPaid + " 個月";
+
+        document.getElementById('remainingMonths').innerText =
+            monthsRemaining + " 個月";
+
         if (monthsRemaining > 0) {
-            document.getElementById('remainingYears').innerText = "(" + y + " 年 " + m + " 個月)";
+            document.getElementById('remainingYears').innerText =
+                "(" + y + " 年 " + m + " 個月)";
         } else {
-            document.getElementById('remainingYears').innerText = "(已成年)";
+            document.getElementById('remainingYears').innerText =
+                "(已成年)";
         }
     };
 </script>
