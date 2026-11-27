@@ -1,74 +1,62 @@
 
-<!-- 成長進度儀表板 -->
-<div class="dashboard">
-    <div class="dashboard-label">✦ 整體成長進度</div>
-
-    <div class="gauge">
-        <svg viewBox="0 0 300 190">
-            <defs>
-                <linearGradient id="gaugeGradient"
-                    x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="#b9a5f5"/>
-                    <stop offset="100%" stop-color="#8064d5"/>
-                </linearGradient>
-            </defs>
-
-            <!-- 背景刻度弧 -->
-            <path
-                d="M 35 155 A 115 115 0 0 1 265 155"
-                fill="none"
-                stroke="#e5def5"
-                stroke-width="15"
-                stroke-linecap="round"
-            />
-
-            <!-- 進度弧 -->
-            <path
-                id="gaugeProgress"
-                d="M 35 155 A 115 115 0 0 1 265 155"
-                fill="none"
-                stroke="url(#gaugeGradient)"
-                stroke-width="15"
-                stroke-linecap="round"
-                pathLength="100"
-                stroke-dasharray="0 100"
-            />
-
-            <!-- 指針 -->
-            <line
-                id="gaugeNeedle"
-                x1="150" y1="155"
-                x2="150" y2="48"
-                stroke="#6550a8"
-                stroke-width="4"
-                stroke-linecap="round"
-                transform="rotate(-90 150 155)"
-            />
-
-            <!-- 指針中心 -->
-            <circle cx="150" cy="155" r="10"
-                fill="#6550a8"/>
-            <circle cx="150" cy="155" r="4"
-                fill="#ffffff"/>
-
-            <!-- 刻度標示 -->
-            <text x="27" y="178" font-size="12"
-                fill="#9a91b4">0%</text>
-            <text x="150" y="25" text-anchor="middle"
-                font-size="12" fill="#9a91b4">50%</text>
-            <text x="273" y="178" text-anchor="end"
-                font-size="12" fill="#9a91b4">100%</text>
-        </svg>
-
-        <div class="gauge-value">
-            <span id="progressPercent">0%</span>
-        </div>
-    </div>
-
-    <div class="progress-detail" id="progressDetail"></div>
-</div>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f4f2ff">
+<title>ㄅ一的成長進度追蹤</title>
 
 <style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    background:
+        radial-gradient(circle at 10% 10%, #e8e3ff, transparent 40%),
+        radial-gradient(circle at 90% 90%, #ffe9ef, transparent 40%),
+        #f8f9ff;
+    color: #344054;
+}
+
+.container {
+    width: 100%;
+    max-width: 410px;
+    padding: 30px 25px;
+    border-radius: 28px;
+    background: rgba(255,255,255,.92);
+    box-shadow: 0 20px 60px rgba(75,65,120,.12);
+    text-align: center;
+    animation: fadeIn .8s ease;
+}
+
+.header-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+}
+
+h2 {
+    margin: 0 0 8px;
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    color: #39435d;
+}
+
+.subtitle {
+    color: #9aa1b5;
+    font-size: .85rem;
+    margin-bottom: 25px;
+}
+
+/* 成長進度儀表板 */
 .dashboard {
     padding: 23px 15px 20px;
     margin-bottom: 18px;
@@ -81,7 +69,8 @@
     color: #7765aa;
     font-size: .9rem;
     font-weight: 700;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
 }
 
 .gauge {
@@ -124,33 +113,370 @@
     color: #887ba9;
     font-weight: 600;
 }
+
+/* 已支付及倒數卡片 */
+.stat-box {
+    padding: 22px 15px;
+    border-radius: 19px;
+    margin-bottom: 15px;
+    transition: transform .25s ease;
+}
+
+.stat-box:hover {
+    transform: translateY(-3px);
+}
+
+.paid {
+    background: linear-gradient(135deg,#e5f9ed,#f1fff5);
+    color: #268451;
+    border: 1px solid #d4f0df;
+}
+
+.countdown {
+    background: linear-gradient(135deg,#fff0e4,#fff8f0);
+    color: #d66a32;
+    border: 1px solid #ffe4cf;
+}
+
+.label {
+    display: block;
+    font-size: .9rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+}
+
+.number {
+    display: block;
+    font-size: 2.5rem;
+    font-weight: 900;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+
+.amount {
+    display: block;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(38,132,81,.18);
+    font-size: 1.45rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+}
+
+.amount-note {
+    display: block;
+    font-size: .78rem;
+    margin-top: 5px;
+    opacity: .75;
+}
+
+.sub-text {
+    display: block;
+    margin-top: 10px;
+    font-size: .9rem;
+    font-weight: 600;
+    opacity: .8;
+}
+
+.footer {
+    margin-top: 20px;
+    color: #a4a9b9;
+    font-size: .72rem;
+    letter-spacing: 1px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media(max-width:420px) {
+    .container {
+        padding: 25px 18px;
+    }
+
+    .number {
+        font-size: 2.3rem;
+    }
+
+    .gauge-value {
+        font-size: 2.4rem;
+    }
+}
+
+@media(prefers-reduced-motion:reduce) {
+    *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
 </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header-icon">🌱</div>
+
+    <h2>成長進度監測</h2>
+    <div class="subtitle">每一個月，都是成長的累積</div>
+
+    <!-- 成長進度儀表板 -->
+    <div class="dashboard">
+
+        <div class="dashboard-label">
+            ✦ 整體成長進度
+        </div>
+
+        <div class="gauge">
+
+            <svg viewBox="0 0 300 190">
+
+                <defs>
+                    <linearGradient id="gaugeGradient"
+                        x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#b9a5f5"/>
+                        <stop offset="100%" stop-color="#8064d5"/>
+                    </linearGradient>
+                </defs>
+
+                <!-- 背景刻度弧 -->
+                <path
+                    d="M 35 155 A 115 115 0 0 1 265 155"
+                    fill="none"
+                    stroke="#e5def5"
+                    stroke-width="15"
+                    stroke-linecap="round"
+                />
+
+                <!-- 成長進度弧 -->
+                <path
+                    id="gaugeProgress"
+                    d="M 35 155 A 115 115 0 0 1 265 155"
+                    fill="none"
+                    stroke="url(#gaugeGradient)"
+                    stroke-width="15"
+                    stroke-linecap="round"
+                    pathLength="100"
+                    stroke-dasharray="0 100"
+                />
+
+                <!-- 指針 -->
+                <line
+                    id="gaugeNeedle"
+                    x1="150"
+                    y1="155"
+                    x2="150"
+                    y2="48"
+                    stroke="#6550a8"
+                    stroke-width="4"
+                    stroke-linecap="round"
+                    transform="rotate(-90 150 155)"
+                />
+
+                <!-- 指針中心 -->
+                <circle cx="150" cy="155" r="10"
+                    fill="#6550a8"/>
+
+                <circle cx="150" cy="155" r="4"
+                    fill="#ffffff"/>
+
+                <!-- 刻度文字 -->
+                <text x="27" y="178"
+                    font-size="12"
+                    fill="#9a91b4">0%</text>
+
+                <text x="150" y="25"
+                    text-anchor="middle"
+                    font-size="12"
+                    fill="#9a91b4">50%</text>
+
+                <text x="273" y="178"
+                    text-anchor="end"
+                    font-size="12"
+                    fill="#9a91b4">100%</text>
+
+            </svg>
+
+            <div class="gauge-value">
+                <span id="progressPercent">0%</span>
+            </div>
+
+        </div>
+
+        <div class="progress-detail" id="progressDetail">
+        </div>
+
+    </div>
+
+    <!-- 已支付 -->
+    <div class="stat-box paid">
+
+        <span class="label">✦ 已支付</span>
+
+        <span class="number" id="paidMonths"></span>
+
+        <span class="amount" id="totalAmount"></span>
+
+        <span class="amount-note">
+            每月 NT$5,000 × 已支付月份
+        </span>
+
+    </div>
+
+    <!-- 成年倒數 -->
+    <div class="stat-box countdown">
+
+        <span class="label">✦ 倒數成年</span>
+
+        <span class="number" id="remainingMonths"></span>
+
+        <span id="remainingYears" class="sub-text"></span>
+
+    </div>
+
+    <div class="footer">
+        EVERY MONTH IS A NEW MILESTONE
+    </div>
+
+</div>
 
 <script>
-// 將原本儀表板寫入部分替換成這段
+window.onload = function() {
 
-const progress = Math.min(
-    100,
-    Math.max(0, finalPaid / totalMonths * 100)
-);
+    const now = new Date();
 
-// 更新百分比
-document.getElementById('progressPercent').innerText =
-    progress.toFixed(1) + "%";
+    const curY = now.getFullYear();
+    const curM = now.getMonth();
+    const curD = now.getDate();
 
-// 更新月份
-document.getElementById('progressDetail').innerText =
-    finalPaid + " / " + totalMonths + " 個月";
+    // 原始日期參數
+    // 2025/04/20 起算
+    // 2034/08/01 成年
 
-// 更新進度弧
-document.getElementById('gaugeProgress').setAttribute(
-    'stroke-dasharray',
-    progress + ' 100'
-);
+    const startY = 2025;
+    const startM = 3;
 
-// 更新指針角度：-90度至90度
-document.getElementById('gaugeNeedle').setAttribute(
-    'transform',
-    'rotate(' + (-90 + progress * 1.8) + ' 150 155)'
-);
+    const adultY = 2034;
+    const adultM = 7;
+
+    // 每月支付基數
+    const monthlyAmount = 5000;
+
+    // -------------------------
+    // 已支付計算
+    // -------------------------
+
+    let monthsPassed =
+        (curY - startY) * 12 + (curM - startM);
+
+    let finalPaid = monthsPassed;
+
+    if (curD >= 20) {
+        finalPaid += 1;
+    }
+
+    // -------------------------
+    // 成年倒數計算
+    // -------------------------
+
+    let monthsRemaining =
+        (adultY - curY) * 12 + (adultM - curM);
+
+    if (curD >= 20) {
+        monthsRemaining -= 1;
+    }
+
+    // 安全限制
+    if (finalPaid < 0) finalPaid = 0;
+
+    if (monthsRemaining < 0) {
+        monthsRemaining = 0;
+    }
+
+    // 年月換算
+    const y = Math.floor(monthsRemaining / 12);
+    const m = monthsRemaining % 12;
+
+    // -------------------------
+    // 金額計算
+    // -------------------------
+
+    const totalAmount =
+        finalPaid * monthlyAmount;
+
+    // -------------------------
+    // 整體成長進度
+    // -------------------------
+
+    const totalMonths =
+        (adultY - startY) * 12 + (adultM - startM);
+
+    const progress = Math.min(
+        100,
+        Math.max(0, finalPaid / totalMonths * 100)
+    );
+
+    // 已支付月份
+    document.getElementById('paidMonths').innerText =
+        finalPaid + " 個月";
+
+    // 累積金額
+    document.getElementById('totalAmount').innerText =
+        "NT$ " + totalAmount.toLocaleString('en-US');
+
+    // 成年倒數
+    document.getElementById('remainingMonths').innerText =
+        monthsRemaining + " 個月";
+
+    if (monthsRemaining > 0) {
+
+        document.getElementById('remainingYears').innerText =
+            "(" + y + " 年 " + m + " 個月)";
+
+    } else {
+
+        document.getElementById('remainingYears').innerText =
+            "(已成年)";
+
+    }
+
+    // -------------------------
+    // 儀表板更新
+    // -------------------------
+
+    document.getElementById('progressPercent').innerText =
+        progress.toFixed(1) + "%";
+
+    document.getElementById('progressDetail').innerText =
+        finalPaid + " / " + totalMonths + " 個月";
+
+    // 進度弧
+    document.getElementById('gaugeProgress').setAttribute(
+        'stroke-dasharray',
+        progress + ' 100'
+    );
+
+    // 指針角度
+    // 0% = -90度
+    // 50% = 0度
+    // 100% = 90度
+
+    document.getElementById('gaugeNeedle').setAttribute(
+        'transform',
+        'rotate(' + (-90 + progress * 1.8) + ' 150 155)'
+    );
+
+};
 </script>
+
+</body>
+</html>
